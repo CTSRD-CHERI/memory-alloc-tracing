@@ -204,8 +204,8 @@ pid$target::munmap:return
 
 pid$target::free:entry
 / !self->using_free / {
-	printf("\n%d %s(%p)", timestamp, probefunc, arg0);
-	ustack();
+	printf("\n%d %s(%p)\n", timestamp, probefunc, arg0);
+	/* ustack(); */
 }
 
 /* ustack() sometimes fails, presumably due accessing badly-decoded stack frame addresses.
