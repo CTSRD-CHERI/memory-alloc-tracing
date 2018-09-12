@@ -55,7 +55,7 @@ sleep 4 && chromium_pid=`pgrep -f browser-startup-dialog` || \
 # Permit destructive actions in dtrace (-w) to not abort due to
 # systemic unresponsiveness induced by heavy tracing
 sudo dtrace -qw -Cs $my_dir/tracing/trace-alloc.d -p $chromium_pid \
-                 >${trace_file} 2>${trace_file}-err &
+                 2>${trace_file}-err | $my_dir/tracing/normalise-trace.pl >${trace_file} &
 dtrace_pid=$!
 # Send the start signal to the workload driver
 sleep 2 && kill -s SIGUSR1 $chromium_pid
