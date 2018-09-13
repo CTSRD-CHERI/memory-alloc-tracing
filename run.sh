@@ -75,11 +75,9 @@ wait %?workload
 
 # Post-process
 wait $proc_memstat_pid
-test $? -eq 0 -o $? -eq 127 && $my_dir/tracing/post/process-coredump-samples.pl <$samples_file >/tmp/$samples_file
-test $? -eq 0 && mv /tmp/$samples_file $samples_file
-
+test $? -eq 0 -o $? -eq 127 &&
+	{ $my_dir/tracing/post/process-coredump-samples.pl <$samples_file >$samples_file-processing &&
+	  mv $samples_file-processing $samples_file ;} &
 wait $dtrace_pid
-# TODO: make normalise-trace.pl aware of callstack IDs;
-# normalise stage left disabled as it discards them, loosing data
-#| tracing/normalise-trace.pl &
+
 test -d ${run_dir} && sort -m -k 1n ${trace_file} ${samples_file} >${run_info_file}
