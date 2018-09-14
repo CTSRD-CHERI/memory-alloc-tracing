@@ -1,0 +1,18 @@
+The Chromium used for tracing is a custom build through the FreeBSD ports tree.
+These notes discuss the difference to the pre-built Chromium, mainly to assess
+the worthiness of the custom Chromium build. 
+
+The custom build uses the MEMORY_TOOL_REPLACES_ALLOCATOR option, which causes
+some of Chromium's allocators to bypass to the system allocator.  This should
+increase the number of allocations seen by the tracing, since the tracing is
+concerned with the system allocator.
+
+===
+                    # Standard malloc API calls   Peak allocated memory in bytes
+Pre-built Chromium          82709037  (+ 0%)            41942801 (+ 0%)
+Own Chromium build          285907428 (+ 345%)          63671038 (+ 51%)
+===
+
+The evaluation uses the following runs:
+Pre-built Chromium    20180907_163945-chromium
+Own Chromium build    20180911_164817-chromium
