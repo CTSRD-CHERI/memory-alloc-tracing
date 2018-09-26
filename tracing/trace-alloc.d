@@ -203,7 +203,7 @@ pid$target::munmap:return
 }
 
 pid$target::free:entry
-/ !self->using_free / {
+/ arg0 && !self->using_free / {
 	printf("\n%d %s(%p)\n", timestamp, probefunc, arg0);
 	/* ustack(); */
 }
