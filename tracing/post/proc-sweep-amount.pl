@@ -45,4 +45,4 @@ map { $skip += length } @skips;
 my $skip_total_b = $skip * $MEM_TO_MAP;
 my $mem_total_b = $mem_map_len * $MEM_TO_MAP;
 my $sweep_total_b = $mem_total_b - $skip_total_b;
-say $sweep_total_b;
+say $mem_total_b, ' ', $sweep_total_b;
