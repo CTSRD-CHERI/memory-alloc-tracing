@@ -50,7 +50,7 @@ pid$target::malloc:entry
 	self->malloc_arg0 = arg0;
 }
 pid$target::malloc:return
-/ arg1 && self->malloc_arg0 / {
+/ arg1 && self->malloc_arg0 && !self->using_malloc / {
 	printf("\n%d %s(%d): %p", timestamp, probefunc, self->malloc_arg0, arg1);
 	self->malloc_arg0 = 0;
 	ustack();
@@ -62,6 +62,10 @@ pid$target::calloc:entry
 {
 	self->calloc_arg0 = arg0;
 	self->calloc_arg1 = arg1;
+	self->using_malloc = 1;
+}
+pid$target::calloc:return {
+	self->using_malloc = 0;
 }
 pid$target::calloc:return
 / arg1 && self->calloc_arg0 && self->calloc_arg1 / {
@@ -77,6 +81,10 @@ pid$target::aligned_alloc:entry
 {
 	self->aligned_alloc_arg0 = arg0;
 	self->aligned_alloc_arg1 = arg1;
+	self->using_malloc = 1;
+}
+pid$target::aligned_alloc:return {
+	self->using_malloc = 0;
 }
 pid$target::aligned_alloc:return
 / arg1 && self->aligned_alloc_arg0 && self->aligned_alloc_arg1 / {
@@ -93,6 +101,10 @@ pid$target::posix_memalign:entry
 	self->posix_memalign_arg0 = (uintptr_t)arg0;
 	self->posix_memalign_arg1 = arg1;
 	self->posix_memalign_arg2 = arg2;
+	self->using_malloc = 1;
+}
+pid$target::posix_memalign:return {
+	self->using_malloc = 0;
 }
 pid$target::posix_memalign:return
 / arg1 == 0 && self->posix_memalign_arg1 && self->posix_memalign_arg2 / {
@@ -111,8 +123,14 @@ pid$target::realloc:entry
 {
 	self->realloc_arg0 = arg0;
 	self->realloc_arg1 = arg1;
+	self->using_malloc = 1;
+	self->using_free = 1;
 }
-pid$target::realloc:return
+pid$target::realloc:return {
+	self->using_malloc = 0;
+	self->using_free = 0;
+}
+pid$target::realloc:return {
 / arg1 && self->realloc_arg0 && self->realloc_arg0 / {
 	printf("\n%d %s(%p, %d): %p", timestamp, probefunc, self->realloc_arg0, self->realloc_arg1, arg1);
 	self->realloc_arg0 = 0;
@@ -184,7 +202,8 @@ pid$target::munmap:return
 	this->do_ustack = 0;
 }
 
-pid$target::free:entry {
+pid$target::free:entry
+/ !self->using_free / {
 	printf("\n%d %s(%p)", timestamp, probefunc, arg0);
 	ustack();
 }
