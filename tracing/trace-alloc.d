@@ -51,7 +51,7 @@ pid$target:libdlmalloc*:malloc:entry
 }
 pid$target:libdlmalloc*:malloc:return
 / arg1 && self->malloc_arg0 && !self->using_malloc / {
-	printf("\n%d %s(%d): %p", timestamp, probefunc, self->malloc_arg0, arg1);
+	printf("\n%d %s(%d): %p %d", timestamp, probefunc, self->malloc_arg0, arg1, tid);
 	self->malloc_arg0 = 0;
 	ustack();
 	/* this->do_ustack = 1; */
@@ -69,7 +69,7 @@ pid$target:libdlmalloc*:calloc:return {
 }
 pid$target:libdlmalloc*:calloc:return
 / arg1 && self->calloc_arg0 && self->calloc_arg1 / {
-	printf("\n%d %s(%d, %d): %p", timestamp, probefunc, self->calloc_arg0, self->calloc_arg1, arg1);
+	printf("\n%d %s(%d, %d): %p %d", timestamp, probefunc, self->calloc_arg0, self->calloc_arg1, arg1, tid);
 	self->calloc_arg0 = 0;
 	self->calloc_arg1 = 0;
 	ustack();
@@ -87,7 +87,7 @@ pid$target:libdlmalloc*:valloc:return {
 }
 pid$target:libdlmalloc*:valloc:return
 / arg1 && self->valloc_arg0 / {
-	printf("\n%d %s(%d): %p", timestamp, probefunc, self->valloc_arg0, arg1);
+	printf("\n%d %s(%d): %p %d", timestamp, probefunc, self->valloc_arg0, arg1, tid);
 	self->valloc_arg0 = 0;
 	ustack();
 	/* this->do_ustack = 1; */
@@ -107,7 +107,7 @@ pid$target:libdlmalloc*:posix_memalign:return {
 pid$target:libdlmalloc*:posix_memalign:return
 / arg1 == 0 && self->posix_memalign_arg1 && self->posix_memalign_arg2 / {
 	allocd_addr_ptr = (void**)copyin(self->posix_memalign_arg0, sizeof(void*));
-	printf("\n%d %s(%d, %d): %p %d %d", timestamp, probefunc, self->posix_memalign_arg1, self->posix_memalign_arg2, *allocd_addr_ptr, arg0, arg1);
+	printf("\n%d %s(%d, %d): %p %d", timestamp, probefunc, self->posix_memalign_arg1, self->posix_memalign_arg2, *allocd_addr_ptr, tid);
 	self->posix_memalign_arg0 = 0;
 	self->posix_memalign_arg1 = 0;
 	self->posix_memalign_arg2 = 0;
@@ -130,7 +130,7 @@ pid$target:libdlmalloc*:realloc:return {
 }
 pid$target:libdlmalloc*:realloc:return
 / arg1 && self->realloc_arg0 && self->realloc_arg0 / {
-	printf("\n%d %s(%p, %d): %p", timestamp, probefunc, self->realloc_arg0, self->realloc_arg1, arg1);
+	printf("\n%d %s(%p, %d): %p %d", timestamp, probefunc, self->realloc_arg0, self->realloc_arg1, arg1, tid);
 	self->realloc_arg0 = 0;
 	self->realloc_arg1 = 0;
 	ustack();
@@ -153,9 +153,9 @@ pid$target::mmap:return
 / (void*)arg1 != (void*)-1 && self->mmap_arg1 && (self->mmap_arg3 & 0x1000) / {
 	this->ts = timestamp;
 	/* ustack_save(tid, this->ts); */
-	printf("\n%d %s(%p, %d, %x, %x, %d, %x): %p", this->ts, probefunc,
+	printf("\n%d %s(%p, %d, %x, %x, %d, %x): %p %d", this->ts, probefunc,
 	       self->mmap_arg0, self->mmap_arg1, self->mmap_arg2, self->mmap_arg3,
-		   self->mmap_arg4, self->mmap_arg5, arg1
+		   self->mmap_arg4, self->mmap_arg5, arg1, tid
 		   );
 	self->mmap_arg0 = 0;
 	self->mmap_arg1 = 0;
@@ -177,8 +177,8 @@ pid$target::munmap:return
 / !arg1 && self->munmap_arg1 / {
 	this->ts = timestamp;
 	/* ustack_save(tid, this->ts); */
-	printf("\n%d %s(%p, %d): %p", this->ts, probefunc,
-	       self->munmap_arg0, self->munmap_arg1, arg1
+	printf("\n%d %s(%p, %d): %p %d", this->ts, probefunc,
+	       self->munmap_arg0, self->munmap_arg1, arg1, tid
 		   );
 	self->munmap_arg0 = 0;
 	self->munmap_arg1 = 0;
@@ -202,7 +202,7 @@ pid$target::munmap:return
 pid$target:libdlmalloc*:free:entry,
 pid$target:libc*:free:entry
 / arg0 && !self->using_free / {
-	printf("\n%d %s(%p)\n", timestamp, probefunc, arg0);
+	printf("\n%d %s(%p) %d\n", timestamp, probefunc, arg0, tid);
 	/* ustack(); */
 }
 
