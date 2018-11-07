@@ -129,7 +129,8 @@ pid$target:libdlmalloc*:realloc:return {
 	self->using_free = 0;
 }
 pid$target:libdlmalloc*:realloc:return
-/ arg1 && self->realloc_arg0 && self->realloc_arg0 / {
+/ (self->realloc_arg0 || self->realloc_arg1) &&
+  (!self->realloc_arg1 || arg1) / {
 	printf("\n%d %s(%p, %d): %p %d", timestamp, probefunc, self->realloc_arg0, self->realloc_arg1, arg1, tid);
 	self->realloc_arg0 = 0;
 	self->realloc_arg1 = 0;
