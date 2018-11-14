@@ -12,6 +12,14 @@ function on_exit_echo_code {
 	echo Exit $?
 }
 
+# Parse the config file passed via the command-line
+if [ $# -gt 0 ] && [ -f $1 ]; then
+	echo Using config file `realpath $1`
+	while read name val; do
+		export "cfg_$name"="$val"
+	done < $1
+fi
+
 # Cause any non-zero exit code to stop the script (e.g. from the test cmd),
 # and handle this by stopping the workload coprocess. Handle SIGINT similarly
 set -e && trap on_err_stop_workload_process ERR SIGINT
