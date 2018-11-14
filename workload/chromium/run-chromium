@@ -12,7 +12,7 @@ trap on_exit_kill_chromium EXIT
 my_dir=`dirname $0`
 my_dir=`cd $my_dir && pwd`
 
-[ -n "$cfg_allocator" ] && chrome_dir_suffix=-$cfg_allocator || chrome_dir_suffix=
+[ -n "$cfg_C_allocator" ] && chrome_dir_suffix=-$cfg_C_allocator || chrome_dir_suffix=
 chrome_binary=~/chromium-65-more-malloc$chrome_dir_suffix/chrome
 chrome_binary=`realpath $chrome_binary` || \
      { err=$?; echo Could not find Chromium binary $chrome_binary >&2; exit $err ;}
