@@ -35,10 +35,10 @@ do
 done
 
 ts=`date '+%Y%m%d_%H%M%S'`
-run_dir=${my_dir}/runs/$ts-chromium
-trace_file=chromium-malloc-trace-$ts
-samples_file=chromium-size-samples-$ts
-run_info_file=chromium-run-info-$ts
+run_dir=${my_dir}/runs/$ts-$cfg_name
+trace_file=$cfg_name-malloc-trace-$ts
+samples_file=$cfg_name-size-samples-$ts
+run_info_file=$cfg_name-run-info-$ts
 mkdir -p ${run_dir}
 cd ${run_dir}
 
@@ -51,35 +51,25 @@ sudo echo -n
 sudo dtrace -ln 'pid:::entry' >/dev/null 2>&1
 sudo sysctl kern.dtrace.buffer_maxsize=`expr 10 \* 1024 \* 1024 \* 1024`
 
-# Start the workload coprocess (suspended), redirecting its stderr to
-# our stdout
-echo Using `which chrome`
-{ coproc $my_dir/workload/chromium-driver.py --chrome-binary=`which chrome` \
-                 --chrome-stdout=${run_dir}/chromium-out-$ts 2>&3 ;} 3>&1
-                 # XXX | tee ${run_dir}/chromium-driver-$ts-err
-sleep 4 && chromium_pid=`pgrep -f browser-startup-dialog` || \
-                 { echo Could not get workload PID; test ;}
+# Start the workload coprocess (should be suspended), redirecting
+# its stdout/stderr to ours
+{ coproc $my_dir/workload/run-$cfg_workload 2>&4 ;} 4>&2
+sleep 6 && read -u ${COPROC[0]} workload_pid
 
 # Permit destructive actions in dtrace (-w) to not abort due to
 # systemic unresponsiveness induced by heavy tracing
-sudo dtrace -qw -Cs $my_dir/tracing/trace-alloc.d -p $chromium_pid \
+sudo dtrace -qw -Cs $my_dir/tracing/trace-alloc.d -p $workload_pid \
                  2>${trace_file}-err | $my_dir/tracing/normalise-trace.pl >${trace_file} &
 dtrace_pid=$!
-# Send the start signal to the workload driver
-sleep 2 && kill -s SIGUSR1 $chromium_pid
-$my_dir/tracing/proc-memstat.pl $chromium_pid >${samples_file} 2>${samples_file}-err &
+# Send the start signal to the workload
+sleep 2 && kill -s SIGUSR1 $workload_pid
+$my_dir/tracing/proc-memstat.pl $workload_pid >${samples_file} 2>${samples_file}-err &
 proc_memstat_pid=$!
-
-# Cross-check the pid obtained externally with the one reported by the
-# workload driver
-read -u ${COPROC[0]} chromium_pid_actual
-test $chromium_pid = $chromium_pid_actual ||
-     { echo "Anticipated PID mismatches actual PID ($chromium_pid != $chromium_pid_actual)"; test ;}
 
 # Disable exiting on any non-zero code, the workload might have usefully run for long enough
 set +e
 
-wait %?workload
+wait $COPROC_PID
 
 # Post-process
 wait $proc_memstat_pid

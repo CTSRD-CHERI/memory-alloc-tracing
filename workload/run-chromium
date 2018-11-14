@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+function on_exit_kill_chromium {
+	err=$?
+	# XXX: chromium-driver should also be killed, however, simply COPROC_PID
+	# identifies the bash process of the coprocess, which is different from
+	# chromium-driver -- why?
+	test $err -eq 17 && kill -SIGKILL $chromium_pid
+}
+
+trap on_exit_kill_chromium EXIT
+
+my_dir=`dirname $0`
+my_dir=`cd $my_dir && pwd`
+
+[ -n "$cfg_allocator" ] && chrome_dir_suffix=-$cfg_allocator || chrome_dir_suffix=
+chrome_binary=~/chromium-65-more-malloc$chrome_dir_suffix/chrome
+chrome_binary=`realpath $chrome_binary` || \
+     { err=$?; echo Could not find Chromium binary $chrome_binary >&2; exit $err ;}
+echo Using Chromium binary $chrome_binary >&2
+{ coproc $my_dir/chromium-driver.py --chrome-binary=$chrome_binary \
+                        --chrome-stdout=`pwd`/chromium-out 2>&4 ;} 4>&2
+sleep 4 && chromium_pid=`pgrep -f browser-startup-dialog` || \
+                 { err=$?; echo Could not get Chromium PID >&2; exit $err ;}
+chromium_pid=`echo $chromium_pid | cut -w -f 1`
+
+echo $chromium_pid
+
+# Cross-check the pid obtained quickly via pgrep with the one
+# reported by the workload driver
+read -u ${COPROC[0]} chromium_pid_actual
+test $chromium_pid = $chromium_pid_actual || { echo "Anticipated PID "\
+	"mismatches actual PID ($chromium_pid != $chromium_pid_actual)" >&2; exit 17 ;}
+wait $COPROC_PID
