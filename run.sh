@@ -68,13 +68,11 @@ proc_memstat_pid=$!
 # Disable exiting on any non-zero code, the workload might have usefully run for long enough
 set +e
 
-wait $COPROC_PID
-
-# Post-process
-wait $proc_memstat_pid
-test $? -eq 0 -o $? -eq 127 &&
+sleep 300 &&
 	{ $my_dir/tracing/post/process-coredump-samples.pl <$samples_file >$samples_file-processing &&
 	  mv $samples_file-processing $samples_file ;} &
-wait $dtrace_pid
 
+# Post-process
+wait $COPROC_PID
+wait $dtrace_pid
 test -d ${run_dir} && sort -m -k 1n ${trace_file} ${samples_file} >${run_info_file}

@@ -4,6 +4,8 @@ use feature qw ( say );
 use File::Basename;
 #use Carp::Assert;
 
+# XXX-LPT: Consider moving this script to a function within process-coredump-samples.pl
+
 # $MEM_TO_MAP is the memory-to-map ratio in bytes-per-bit of the map we should be using.
 # Adjust this to a value that's a multiple of 64 used by the .vecbin file, e.g. 4096
 # to look at pages of memory.

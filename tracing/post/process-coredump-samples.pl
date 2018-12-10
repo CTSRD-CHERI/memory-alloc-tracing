@@ -18,6 +18,7 @@ while (<>) {
 		die 'proc-sweep-amount failed' if !defined $sweep;
 		$sweep_latest = $sweep;
 		$sz_from_coredump_latest = $sz_from_coredump;
+		unlink $corefile;
 	}
 	# XXX-LPT: Prefer the coredump measure of address-space size as it is
 	# more likely what is needed, since it seems to be more consistent with

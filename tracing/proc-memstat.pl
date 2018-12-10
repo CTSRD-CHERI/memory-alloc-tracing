@@ -80,6 +80,7 @@ system("sudo sysctl kern.coredump_on_".lc($COREDUMP_SIGNAL)."=1 >/dev/null") == 
 system("sudo limits -P $g_pid -c 5g") == 0 or
     die "Cannot lift coredump size limit for process $g_pid";
 
+# XXX-LPT: Consider launching process-coredump-samples.pl from here (run in parallel with the workload)
 print "#timestamp-unix-ns\taddr-space-size-b\tcorefile\n";
 while (my $size_b = proc_vmstat()) {
 	my $do_coredump = ($slept_us % $SLEEP_US_LONG) == 0;
