@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 function on_err_stop_workload_process {
-	eval "
-	run_duration=\$((`date +%s` - $ts_start))
-	test \$run_duration -gt 30 || rm -rf $run_dir
+	err=$?
+	run_duration=$((`date +%s` - $ts_start))
+	test $run_duration -lt 30 && rm -rf $run_dir
 	test $COPROC_PID && kill -s SIGKILL $COPROC_PID
-	exit $?
-	"
+	exit $err
 }
 
 function on_exit_echo_code {
