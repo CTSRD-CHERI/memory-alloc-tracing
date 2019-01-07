@@ -132,7 +132,7 @@ tabs_required = 1
 #tabs_required_randomise_period = 10**9   # Disabled
 tabs_required_randomise_period = 50
 tabs_required_randomise_last = 0
-workload_pause_period = 30
+workload_pause_period = 0
 workload_pause_last = 0
 while urls_partitioned or tabs:
     if urls_partitioned:
@@ -156,7 +156,7 @@ while urls_partitioned or tabs:
         tabs_required = max(1, min(tabs_required, params.tabs_max))
         tabs_required_randomise_last = urls_visited
 
-    if urls_visited >= workload_pause_last + workload_pause_period:
+    if workload_pause_period > 0 and urls_visited >= workload_pause_last + workload_pause_period:
         sleep(240)
         workload_pause_last = urls_visited
 

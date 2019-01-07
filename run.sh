@@ -55,6 +55,8 @@ sudo sysctl kern.dtrace.buffer_maxsize=`expr 10 \* 1024 \* 1024 \* 1024`
 # its stdout/stderr to ours
 { coproc $my_dir/workload/$cfg_workload/run-$cfg_workload 2>&4 ;} 4>&2
 sleep 6 && read -u ${COPROC[0]} workload_pid
+# Throttle down the workload process to avoid trace drops
+sudo rctl -a process:$workload_pid:pcpu:deny=25
 
 # Generate the DTrace script
 m4 -D ALLOCATORS="$cfg_allocators" -I $my_dir/tracing $my_dir/tracing/trace-alloc.m4 > $dtrace_script
