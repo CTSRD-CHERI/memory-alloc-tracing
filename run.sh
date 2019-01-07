@@ -35,6 +35,7 @@ done
 
 ts=`date '+%Y%m%d_%H%M%S'`
 run_dir=${my_dir}/runs/$ts-$cfg_name
+dtrace_script=trace-alloc.d
 trace_file=$cfg_name-malloc-trace-$ts
 samples_file=$cfg_name-size-samples-$ts
 run_info_file=$cfg_name-run-info-$ts
@@ -55,9 +56,11 @@ sudo sysctl kern.dtrace.buffer_maxsize=`expr 10 \* 1024 \* 1024 \* 1024`
 { coproc $my_dir/workload/$cfg_workload/run-$cfg_workload 2>&4 ;} 4>&2
 sleep 6 && read -u ${COPROC[0]} workload_pid
 
+# Generate the DTrace script
+m4 -D ALLOCATORS="$cfg_allocators" -I $my_dir/tracing $my_dir/tracing/trace-alloc.m4 > $dtrace_script
 # Permit destructive actions in dtrace (-w) to not abort due to
 # systemic unresponsiveness induced by heavy tracing
-sudo dtrace -qw -Cs $my_dir/tracing/trace-alloc.d -p $workload_pid \
+sudo dtrace -qw -Cs $dtrace_script -p $workload_pid \
                  2>${trace_file}-err | $my_dir/tracing/normalise-trace.pl >${trace_file} &
 dtrace_pid=$!
 # Send the start signal to the workload
