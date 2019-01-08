@@ -11,6 +11,7 @@ my $PAGE_SIZE = 4 * $KB;
 my $COREDUMP_SIGNAL = 'SIGUSR2';
 my $g_pid = $ARGV[0];
 my ($g_time_s, $time_us) = gettimeofday();
+my $cpu_ts = 0;
 
 sub proc_vmstat {
 	open my $ps, "-|", "procstat -v $g_pid";
@@ -81,12 +82,12 @@ system("sudo limits -P $g_pid -c 5g") == 0 or
     die "Cannot lift coredump size limit for process $g_pid";
 
 # XXX-LPT: Consider launching process-coredump-samples.pl from here (run in parallel with the workload)
-print "#timestamp-unix-ns\taddr-space-size-b\tcorefile\n";
+print "#timestamp-unix-ns\taddr-space-size-b\tcorefile\tcpu-time-ns\n";
 while (my $size_b = proc_vmstat()) {
 	my $do_coredump = ($slept_us % $SLEEP_US_LONG) == 0;
 	my $corefile = $do_coredump ? proc_coredump() : '';
 
-	printf "%d%06d000\t%d\t%s\n", ($g_time_s, $time_us, $size_b, $corefile);
+	printf "%d%06d000\t%d\t%s\t%d\n", ($g_time_s, $time_us, $size_b, $corefile, $cpu_ts);
 	last if $do_coredump && !$corefile;
 
 	usleep($SLEEP_US_SHORT);
