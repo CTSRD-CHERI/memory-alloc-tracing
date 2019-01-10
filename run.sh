@@ -73,9 +73,14 @@ proc_memstat_pid=$!
 # Disable exiting on any non-zero code, the workload might have usefully run for long enough
 set +e
 
-sleep 300 &&
-	{ $my_dir/tracing/post/process-coredump-samples.pl <$samples_file >$samples_file-processing &&
-	  mv $samples_file-processing $samples_file ;} &
+# Process the samples file until the producer (the proc-memstat sampler) stops
+{
+while kill -0 $proc_memstat_pid >/dev/null 2>/dev/null
+do
+    sleep 300
+    $my_dir/tracing/post/process-coredump-samples.pl <$samples_file \
+                                           >$samples_file-processing
+done && mv $samples_file-processing $samples_file ;} &
 
 # Post-process
 wait $COPROC_PID
