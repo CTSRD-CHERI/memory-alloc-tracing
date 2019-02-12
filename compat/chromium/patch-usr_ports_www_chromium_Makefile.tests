@@ -1,0 +1,12 @@
+diff --git a/root/ports-www-chromium-67-orig/Makefile.tests b/root/ports-www-chromium-67/Makefile.tests
+index 7e640e2..2b5f81e 100644
+--- a/root/ports-www-chromium-67-orig/Makefile.tests
++++ b/root/ports-www-chromium-67/Makefile.tests
+@@ -4,7 +4,6 @@
+ TEST_TARGETS=	base_unittests \
+ 		crypto_unittests \
+ 		cacheinvalidation_unittests \
+-		gpu_unittests \
+ 		printing_unittests \
+ 		sql_unittests \
+ 		content_unittests \

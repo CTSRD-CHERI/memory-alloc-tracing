@@ -1,0 +1,12 @@
+diff --git a/root/ports-www-chromium-67-orig/Makefile b/root/ports-www-chromium-67/Makefile
+index 8eb778c..79ac141 100644
+--- a/root/ports-www-chromium-67-orig/Makefile
++++ b/root/ports-www-chromium-67/Makefile
+@@ -171,7 +171,6 @@ DEBUG_VARS=		BUILDTYPE=Debug \
+ 			WANTSPACE="lots of free disk space (~ 12GB)"
+ DEBUG_VARS_OFF=		BUILDTYPE=Release \
+ 			GN_ARGS+=is_debug=false \
+-			GN_ARGS+=is_official_build=true \
+ 			GN_ARGS+=symbol_level=0 \
+ 			GN_ARGS+=remove_webcore_debug_symbols=true \
+ 			WANTSPACE="a fair amount of free disk space (~ 5.8GB)"
