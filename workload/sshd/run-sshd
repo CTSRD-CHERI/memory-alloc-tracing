@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+SSHD_PORT=7357
+my_dir=`dirname $0`
+my_dir=`cd $my_dir && pwd`
+
+function port_has_listener {
+	netstat -4 -an | grep LISTEN | cut -w -f 4 | grep -q "\.$1$"
+}
+port_has_listener $SSHD_PORT && { echo $0: port $SSHD_PORT is already in use >&2; exit 1 ;} 
+
+bash $my_dir/sshd_driver.sh $SSHD_PORT &
+
+# Await sshd to begin listening on $SSHD_PORT before
+# connecting the ssh client
+while ! port_has_listener $SSHD_PORT; do sleep 0.5; done
+bash $my_dir/cipher.bash "-p $SSHD_PORT localhost" aes256-cbc >/dev/null
