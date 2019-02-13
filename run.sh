@@ -74,6 +74,7 @@ proc_memstat_pid=$!
 set +e
 
 # Process the samples file until the producer (the proc-memstat sampler) stops
+# XXX-LPT: this would best be hidden away into a proc-memstat driver script
 {
 while kill -0 $proc_memstat_pid >/dev/null 2>/dev/null
 do

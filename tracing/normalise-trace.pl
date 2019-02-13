@@ -7,7 +7,8 @@ my %threads;
 my @allocators = map ucfirst, (split / /, $ENV{'cfg_allocators'});
 my $cpu_ts = 0;
 
-print '#', join("\t", qw ( timestamp-unix-ns callstack tid name args result alloc-stack cpu-time-ns)), "\n";
+print '@record-type:', join("\t", qw ( call-trace timestamp-unix-ns callstack tid name args
+                            result alloc-stack cpu-time-ns )), "\n";
 while (<>) {
 	my $call_trace = '^(\w+)';
 	my $args_trace = '\((-?[0-9a-f]+\s*' . '(?:,\s*-?[0-9a-f]+)*)\)';
@@ -54,7 +55,8 @@ while (<>) {
 		}
 		$alloc_stack = join " ", reverse @alloc_chain;
 
-		print join "\t", $ts, $stack, $tid, $call, $args, $res, $alloc_stack, $cpu_ts;
+		print join "\t", 'call-trace', $ts, $stack, $tid, $call, $args, $res,
+		                 $alloc_stack, $cpu_ts;
 		print "\n";
 	}
 }

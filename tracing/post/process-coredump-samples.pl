@@ -6,10 +6,12 @@ my $my_dir = dirname($0);
 
 my $sweep_latest = 0;
 my $sz_from_coredump_latest = 0;
-print '#', join("\t", qw ( timestamp-unix-ns addr-space-size-b sweep-amount-b cpu-time-ns)), "\n";
+print '@record-type:', join("\t", qw ( aspace-sample timestamp-unix-ns addr-space-size-b
+                                  sweep-amount-b cpu-time-ns )), "\n";
 while (<>) {
 	next if /^#/;
-	my ($ts, $sz, $corefile) = split /\t/;
+	if (/^\@record-type:/) { $_ = "#$_"; next; }
+	my ($rtype, $ts, $sz, $corefile) = split /\t/;
 	my $cpu_ts = 0;
 	chomp $corefile;
 	if ($corefile ne '') {
@@ -25,7 +27,7 @@ while (<>) {
 	# to be more consistent with other measures, such as the amount of memory
 	# mapped by the allocator
 	$sz = $sz_from_coredump_latest;
-	$_ = sprintf "%d\t%d\t%d\t%d\n", ($ts, $sz, $sweep_latest, $cpu_ts);
+	$_ = sprintf "aspace-sample\t%d\t%d\t%d\t%d\n", ($ts, $sz, $sweep_latest, $cpu_ts);
 } continue {
 	print;
 }
