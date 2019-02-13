@@ -1,3 +1,4 @@
 name	chromium-dlmalloc
 workload	chromium
+allocators	mmap malloc
 C_allocator	dlmalloc

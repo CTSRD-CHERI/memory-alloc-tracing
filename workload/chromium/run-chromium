@@ -12,6 +12,13 @@ trap on_exit_kill_chromium EXIT
 my_dir=`dirname $0`
 my_dir=`cd $my_dir && pwd`
 
+[ -d $my_dir/LayoutTests ] || [ -L $my_dir/LayoutTests ] ||
+    { err=$?;
+      dir_users="$my_dir/urls?";
+      echo Missing $my_dir/LayoutTests directory or link \
+           used by $my_dir/urls.py, referenced in $dir_users >&2;
+      exit $? ;}
+
 [ -n "$cfg_C_allocator" ] && chrome_dir_suffix=-$cfg_C_allocator || chrome_dir_suffix=
 chrome_binary=~/chromium-65-more-malloc$chrome_dir_suffix/chrome
 chrome_binary=`realpath $chrome_binary` || \
