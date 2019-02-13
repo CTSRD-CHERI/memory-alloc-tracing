@@ -4,9 +4,10 @@
 # ts	callstack	request (malloc/calloc/realloc/aligned_alloc/free)	args	result (addr/na)
 
 my %threads;
+my @allocators = map ucfirst, (split / /, $ENV{'cfg_allocators'});
 my $cpu_ts = 0;
 
-print '#', join("\t", qw ( timestamp-unix-ns callstack tid name args result alloc-chain cpu-time-ns)), "\n";
+print '#', join("\t", qw ( timestamp-unix-ns callstack tid name args result alloc-stack cpu-time-ns)), "\n";
 while (<>) {
 	my $call_trace = '^(\w+)';
 	my $args_trace = '\((-?[0-9a-f]+\s*' . '(?:,\s*-?[0-9a-f]+)*)\)';
@@ -23,7 +24,7 @@ while (<>) {
 		my $ts = $4;
 		my $cpu_ts_of_thrd = $5;
 		my $tid = $6;
-		my $alloc_chain = $7;
+		my $alloc_chain_encoded = $7;
 		$args =~ s/\s*,\s*/ /g;
 
 		my $stack = "";
@@ -43,7 +44,17 @@ while (<>) {
 		$thread->{cpu_ts_last} = $cpu_ts_of_thrd;
 		$threads{$tid} = $thread;
 
-		print join "\t", $ts, $stack, $tid, $call, $args, $res, $alloc_chain, $cpu_ts;
+		my @alloc_chain_encoded = split / /, $alloc_chain_encoded;
+		my @alloc_chain;
+		foreach (0..$#allocators) {
+			my $alloc_pos = $alloc_chain_encoded[$_];
+			if ($alloc_pos > 0) {
+				$alloc_chain[$alloc_pos - 1] = $allocators[$_];
+			}
+		}
+		$alloc_stack = join " ", reverse @alloc_chain;
+
+		print join "\t", $ts, $stack, $tid, $call, $args, $res, $alloc_stack, $cpu_ts;
 		print "\n";
 	}
 }
