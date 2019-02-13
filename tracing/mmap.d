@@ -22,7 +22,7 @@ pid$target::mmap:return
 	/* ustack_save(tid, this->ts); */
 	printf("\nmmap(%p, %d, %x, %x, %d, %x): %p TRACE_CTXT_FMT",
 	       self->mmap_arg0, self->mmap_arg1, self->mmap_arg2, self->mmap_arg3,
-		   self->mmap_arg4, self->mmap_arg5, arg1, TRACE_CTXT_FMT_ARGS);
+		   (int)self->mmap_arg4, self->mmap_arg5, arg1, TRACE_CTXT_FMT_ARGS);
 	ustack();
 }
 pid$target::mmap:return {

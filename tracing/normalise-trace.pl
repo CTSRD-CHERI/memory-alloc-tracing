@@ -9,8 +9,8 @@ my $cpu_ts = 0;
 print '#', join("\t", qw ( timestamp-unix-ns callstack tid name args result alloc-chain cpu-time-ns)), "\n";
 while (<>) {
 	my $call_trace = '^(\w+)';
-	my $args_trace = '\(([0-9a-f]+\s*' . '(?:,\s*[0-9a-f]+)*)\)';
-	my $result_trace = '(?::\s*([0-9a-f]+))?';
+	my $args_trace = '\((-?[0-9a-f]+\s*' . '(?:,\s*-?[0-9a-f]+)*)\)';
+	my $result_trace = '(?::\s*(-?[0-9a-f]+))?';
 
 	my $ts_trace = '([0-9]+)';
 	my $cpu_ts_trace = '([0-9]+)';
