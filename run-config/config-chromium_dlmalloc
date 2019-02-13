@@ -1,0 +1,3 @@
+name	chromium-dlmalloc
+workload	chromium
+C_allocator	dlmalloc

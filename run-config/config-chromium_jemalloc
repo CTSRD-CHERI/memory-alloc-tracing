@@ -1,0 +1,3 @@
+name	chromium-jemalloc
+workload	chromium
+allocators	mmap malloc
