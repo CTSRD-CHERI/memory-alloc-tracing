@@ -1,0 +1,3 @@
+[submodule "tracing/post/pycdump-scan"]
+	path = tracing/post/pycdump-scan
+	url = https://github.com/CTSRD-CHERI/pycdump-scan
