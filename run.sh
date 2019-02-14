@@ -91,4 +91,5 @@ done && mv $samples_file-processing $samples_file ;} &
 wait $COPROC_PID
 wait $dtrace_pid
 test -d ${run_dir} &&
-  $my_dir/tracing/post/merge-samples-and-trace.sh $samples_file $trace_file >${run_info_file}
+  $my_dir/tracing/post/merge-samples-and-trace.sh $samples_file $trace_file >${run_info_file} &&
+  rm -f $samples_file $trace_file
