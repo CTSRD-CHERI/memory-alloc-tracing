@@ -25,7 +25,7 @@ my $corefile = $ARGV[0];
 if (!-e "$corefile.vecbin") {
 	my $pypy_cmd = `which pypy3`;
 	chomp $pypy_cmd;
-	system("$pypy_cmd $my_dir/pycdump-scan/pycdump-scan.py --dump-ptr-vector $corefile >/dev/null 2>&1") == 0 or
+	system("$pypy_cmd $my_dir/pycdump-scan/pycdump-scan.py --dump-ptr-vector $corefile >/dev/null") == 0 or
 	      die "Cannot compute .vecbin from $corefile (pycdump-scan exited $?)";
 }
 open my $fh, '<', "$corefile.vecbin";
