@@ -56,6 +56,8 @@ sudo sysctl kern.dtrace.buffer_maxsize=`expr 10 \* 1024 \* 1024 \* 1024`
 { coproc $my_dir/workload/$cfg_workload/run-$cfg_workload 2>&4 ;} 4>&2
 sleep 6 && read -u ${COPROC[0]} workload_pid
 # Throttle down the workload process to avoid trace drops
+# XXX-LPT: tweak this knob if the trace shows sample drops
+#    TODO: pull this out as a config e.g. pcpu_limit ($cfg_pcpu_limit)
 sudo rctl -a process:$workload_pid:pcpu:deny=25
 
 # Generate the DTrace script
