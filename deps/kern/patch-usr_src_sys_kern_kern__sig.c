@@ -1,8 +1,8 @@
 diff --git a/usr/src/sys/kern/kern_sig.c.orig b/usr/src/sys/kern/kern_sig.c
-index 443af14..3cc1a05 100644
+index ec1423f..3cc1a05 100644
 --- a/usr/src/sys/kern/kern_sig.c.orig
 +++ b/usr/src/sys/kern/kern_sig.c
-@@ -176,6 +176,10 @@ static int	do_coredump = 1;
+@@ -176,6 +176,17 @@ static int	do_coredump = 1;
  SYSCTL_INT(_kern, OID_AUTO, coredump, CTLFLAG_RW,
  	&do_coredump, 0, "Enable/Disable coredumps");
  
@@ -10,10 +10,17 @@ index 443af14..3cc1a05 100644
 +static int  coredump_on_sigkill = 0;
 +SYSCTL_INT(_kern, OID_AUTO, coredump_on_sigkill, CTLFLAG_RW, &coredump_on_sigkill,
 +    0, "Dump a core and continue in the event of SIGKILL");
- static int  coredump_on_sigusr1 = 0;
- SYSCTL_INT(_kern, OID_AUTO, coredump_on_sigusr1, CTLFLAG_RW, &coredump_on_sigusr1,
-     0, "Dump a core and continue in the event of SIGUSR1");
-@@ -213,7 +217,7 @@ static int sigproptbl[NSIG] = {
++static int  coredump_on_sigusr1 = 0;
++SYSCTL_INT(_kern, OID_AUTO, coredump_on_sigusr1, CTLFLAG_RW, &coredump_on_sigusr1,
++    0, "Dump a core and continue in the event of SIGUSR1");
++static int  coredump_on_sigusr2 = 0;
++SYSCTL_INT(_kern, OID_AUTO, coredump_on_sigusr2, CTLFLAG_RW, &coredump_on_sigusr2,
++    0, "Dump a core and continue in the event of SIGUSR2");
++
+ static int	set_core_nodump_flag = 0;
+ SYSCTL_INT(_kern, OID_AUTO, nodump_coredump, CTLFLAG_RW, &set_core_nodump_flag,
+ 	0, "Enable setting the NODUMP flag on coredump files");
+@@ -206,7 +217,7 @@ static int sigproptbl[NSIG] = {
  	SA_KILL|SA_CORE,		/* SIGABRT */
  	SA_KILL|SA_CORE,		/* SIGEMT */
  	SA_KILL|SA_CORE,		/* SIGFPE */
@@ -22,7 +29,7 @@ index 443af14..3cc1a05 100644
  	SA_KILL|SA_CORE,		/* SIGBUS */
  	SA_KILL|SA_CORE,		/* SIGSEGV */
  	SA_KILL|SA_CORE,		/* SIGSYS */
-@@ -234,8 +238,8 @@ static int sigproptbl[NSIG] = {
+@@ -227,8 +238,8 @@ static int sigproptbl[NSIG] = {
  	SA_KILL,			/* SIGPROF */
  	SA_IGNORE,			/* SIGWINCH  */
  	SA_IGNORE,			/* SIGINFO */
@@ -33,19 +40,22 @@ index 443af14..3cc1a05 100644
  };
  
  static void reschedule_signals(struct proc *p, sigset_t block, int flags);
-@@ -641,8 +645,9 @@ sigprop(int sig)
+@@ -633,8 +644,13 @@ static __inline int
+ sigprop(int sig)
  {
  
- 	if (sig > 0 && sig < NSIG) {
--		if (sig == SIGUSR1 && coredump_on_sigusr1 ||
--			sig == SIGUSR2 && coredump_on_sigusr2)
+-	if (sig > 0 && sig < NSIG)
++	if (sig > 0 && sig < NSIG) {
 +		if ((sig == SIGKILL && coredump_on_sigkill) ||
 +			(sig == SIGUSR1 && coredump_on_sigusr1) ||
 +			(sig == SIGUSR2 && coredump_on_sigusr2))
- 			return SA_CORE;
++			return SA_CORE;
  		return (sigproptbl[_SIG_IDX(sig)]);
- 	}
-@@ -3040,13 +3045,29 @@ postsig(sig)
++	}
+ 	return (0);
+ }
+ 
+@@ -3029,13 +3045,29 @@ postsig(sig)
  	}
  
  	if (action == SIG_DFL) {
