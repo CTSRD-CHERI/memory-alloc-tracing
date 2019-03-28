@@ -62,10 +62,12 @@ sudo rctl -a process:$workload_pid:pcpu:deny=25
 
 # Generate the DTrace script
 m4 -D ALLOCATORS="$cfg_allocators" -I $my_dir/tracing $my_dir/tracing/trace-alloc.m4 > $dtrace_script
+# Report any trace probes that are not there to trace
+sudo dtrace -l -qw -Cs $dtrace_script -p $workload_pid 2>${trace_file}-err >&2
 # Permit destructive actions in dtrace (-w) to not abort due to
 # systemic unresponsiveness induced by heavy tracing
-sudo dtrace -qw -Cs $dtrace_script -p $workload_pid \
-                 2>${trace_file}-err | $my_dir/tracing/normalise-trace.pl >${trace_file} &
+sudo dtrace -Z -qw -Cs $dtrace_script -p $workload_pid \
+                 2>>${trace_file}-err | $my_dir/tracing/normalise-trace.pl >${trace_file} &
 dtrace_pid=$!
 # Send the start signal to the workload
 sleep 2 && kill -s SIGUSR1 $COPROC_PID
