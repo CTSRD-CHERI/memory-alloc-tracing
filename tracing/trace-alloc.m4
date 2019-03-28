@@ -6,8 +6,11 @@ define(`join', `$2`'foreach(`other_arg', (shift(shift($*))), `$1`'other_arg')')
 
 ifdef(`ALLOCATORS',,`errprint(`Missing -D ALLOCATORS="..."') m4exit(1)')
 ifelse(ALLOCATORS,,`errprint(`Empty macro definition -D ALLOCATORS="'ALLOCATORS`"') m4exit(1)')
-define(`allocs', (patsubst(patsubst(ALLOCATORS, `^[[:space:]]+|[[:space:]]+$', `'),
-					       `[[:space:]]+', `,')))
+define(`whitespace', `[ 	]+')
+define(`allocs', (patsubst(patsubst(patsubst(ALLOCATORS, `^'whitespace, `'),
+                           whitespace`$', `'),
+                           whitespace, `,')))
+undefine(`whitespace')
 
 define(`allocs_cnt', 0)
 define(`count_alloc', `define(`allocs_cnt', incr(allocs_cnt))')
