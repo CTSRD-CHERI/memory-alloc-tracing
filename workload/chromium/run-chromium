@@ -32,9 +32,22 @@ chromium_pid=`echo $chromium_pid | cut -w -f 1`
 
 echo $chromium_pid
 
+# Wait for SIGUSR1
+function set_sigusr1_received {
+	sigusr1_received=1
+}
+trap set_sigusr1_received SIGUSR1
+sigusr1_received=0
+while [ $sigusr1_received -eq 0 ] ; do
+	sleep 0.5
+done
+
+# Forward SIGUSR1 to the workload process
+kill -SIGUSR1 $chromium_pid
+
 # Cross-check the pid obtained quickly via pgrep with the one
 # reported by the workload driver
 read -u ${COPROC[0]} chromium_pid_actual
 test $chromium_pid = $chromium_pid_actual || { echo "Anticipated PID "\
 	"mismatches actual PID ($chromium_pid != $chromium_pid_actual)" >&2; exit 17 ;}
-wait $COPROC_PID
+wait $COPROC_PID $chromium_pid
