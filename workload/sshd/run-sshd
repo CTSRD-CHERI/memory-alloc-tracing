@@ -8,9 +8,32 @@ function port_has_listener {
 }
 port_has_listener $SSHD_PORT && { echo $0: port $SSHD_PORT is already in use >&2; exit 1 ;} 
 
-bash $my_dir/sshd_driver.sh $SSHD_PORT &
+# Launch the sshd workload.  SIGSTOP it asap, but after
+# the exec() to allow the trace probes to be installed.
+# -h needed for non-root sshd
+# -d sshd debugging mode: do not fork sshd
+# UsePrivilegeSeparation=no do not fork process with connecting user's priv
+`which sshd` -o UsePrivilegeSeparation=no \
+             -h ~/.ssh/id_rsa -d -p $SSHD_PORT 2>/dev/null &
+sshd_pid=$!
+sleep 0.1 && kill -STOP $sshd_pid
 
-# Await sshd to begin listening on $SSHD_PORT before
-# connecting the ssh client
+# Wait for SIGUSR1
+function set_sigusr1_received {
+	sigusr1_received=1
+}
+trap set_sigusr1_received SIGUSR1
+sigusr1_received=0
+while [ $sigusr1_received -eq 0 ] ; do
+	sleep 0.5
+done
+
+# Resume the sshd workload process
+kill -CONT $sshd_pid
+
+# Connect the ssh client.  Await sshd to begin listening on $SSHD_PORT
+# before connecting.
 while ! port_has_listener $SSHD_PORT; do sleep 0.5; done
 bash $my_dir/cipher.bash "-p $SSHD_PORT localhost" aes256-cbc >/dev/null
+
+wait $sshd_pid
