@@ -11,13 +11,44 @@ function on_exit_echo_code {
 	echo Exit $?
 }
 
-# Parse the config file passed via the command-line
-if [ $# -gt 0 ] && [ -f $1 ]; then
-	echo Using config file `realpath $1`
-	while read name val; do
-		export "cfg_$name"="$val"
-	done < $1
+function print_help {
+	echo "$0 -c config_file [executable]"
+	echo "$0 executable"
+}
+
+
+# Parse command-line arguments
+while getopts 'c:h' cmdline_opt $*; do
+	case "$cmdline_opt" in
+	c)
+		config_file=`realpath $OPTARG`
+		test -f $config_file || { echo No config file $config_file >&2; exit 1 ;}
+		;;
+	h)
+		print_help
+		exit 0
+		;;
+	esac
+done
+if [ -z "$config_file" ]; then
+	test $# -gt 0 || { print_help; exit 1 ;}
+	config_file=`realpath run-config/config-generic`
 fi
+echo Using config file $config_file
+shift $((OPTIND - 1))
+
+
+# Parse the config file
+while read name val; do
+	export "cfg_$name"="$val"
+done < $config_file
+# Configs missing the "name" key get it from the first non-option argument,
+# which is interpreted as an executable file name, or from the config
+# filename if there is no non-option argument
+if [ -z "$cfg_name" ]; then
+	test $# -gt 0 && cfg_name=`basename $1` || cfg_name=`basename $config_file`
+fi
+
 
 # Cause any non-zero exit code to stop the script (e.g. from the test cmd),
 # and handle this by stopping the workload coprocess. Handle SIGINT similarly
@@ -28,10 +59,12 @@ ts_start=`date +%s`
 my_dir=`dirname $0`
 my_dir=`cd $my_dir && pwd`
 
+
 for d in runs
 do
 	test -d $d -o -h $d || mkdir $d
 done
+
 
 ts=`date '+%Y%m%d_%H%M%S'`
 run_dir=${my_dir}/runs/$ts-$cfg_name
@@ -59,6 +92,7 @@ sleep 6 && read -u ${COPROC[0]} workload_pid
 # XXX-LPT: tweak this knob if the trace shows sample drops
 #    TODO: pull this out as a config e.g. pcpu_limit ($cfg_pcpu_limit)
 sudo rctl -a process:$workload_pid:pcpu:deny=25
+
 
 # Generate the DTrace script
 m4 -D ALLOCATORS="$cfg_allocators" -I $my_dir/tracing $my_dir/tracing/trace-alloc.m4 > $dtrace_script

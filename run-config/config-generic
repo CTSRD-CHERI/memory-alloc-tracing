@@ -1,0 +1,2 @@
+workload	generic
+allocators	mmap malloc
