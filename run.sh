@@ -68,7 +68,7 @@ sudo dtrace -qw -Cs $dtrace_script -p $workload_pid \
                  2>${trace_file}-err | $my_dir/tracing/normalise-trace.pl >${trace_file} &
 dtrace_pid=$!
 # Send the start signal to the workload
-sleep 2 && kill -s SIGUSR1 $workload_pid
+sleep 2 && kill -s SIGUSR1 $COPROC_PID
 $my_dir/tracing/proc-memstat.pl $workload_pid >${samples_file} 2>${samples_file}-err &
 proc_memstat_pid=$!
 
@@ -88,7 +88,7 @@ do
 done && mv $samples_file-processing $samples_file ;} &
 
 # Post-process
-wait $COPROC_PID
+wait $COPROC_PID $workload_pid
 wait $dtrace_pid
 test -d ${run_dir} &&
   $my_dir/tracing/post/merge-samples-and-trace.sh $samples_file $trace_file >${run_info_file} &&
