@@ -13,7 +13,17 @@ my $g_pid = $ARGV[0];
 my ($g_time_s, $time_us) = gettimeofday();
 my $cpu_ts = 0;
 
+my $my_os = `uname -s`;
+
+my $do_coredump;
+
+
 sub proc_vmstat {
+	if ($my_os !~ m/freebsd/i) {
+		return 0 if system("kill -0 $g_pid >/dev/null 2>&1");
+		return -1;
+	}
+
 	open my $ps, "-|", "procstat -v $g_pid";
 	my $dsize_b = 0;
 
@@ -53,7 +63,7 @@ sub proc_coredump {
 	state $coredumps = 0;
 	my @corefiles;
 
-	system("kill -$COREDUMP_SIGNAL $g_pid") == 0 or return '';
+	&$do_coredump() == 0 or return '';
 	my $tried = 0;
 	while (1) {
 		sleep 1;
@@ -69,6 +79,12 @@ sub proc_coredump {
 	$corefile;
 }
 
+sub _dump_core_kill {
+	system("kill -$COREDUMP_SIGNAL $g_pid");
+}
+sub _dump_core_gcore {
+	system("sudo gcore -s -o $g_pid.core $g_pid");
+}
 
 my $slept_us = 0;
 my $SLEEP_US_SHORT = 500000;
@@ -76,21 +92,28 @@ my $SLEEP_US_LONG = $SLEEP_US_SHORT * 60;
 die "SLEEP_US_LONG=$SLEEP_US_LONG, must be multiple
      of SLEEP_US_SHORT=$SLEEP_US_LONG" if $SLEEP_US_LONG % $SLEEP_US_SHORT;
 
-system("sudo sysctl kern.coredump_on_".lc($COREDUMP_SIGNAL)."=1 >/dev/null") == 0 or
-    die "Cannot enable coredump-ing on signal $COREDUMP_SIGNAL";
-system("sudo limits -P $g_pid -c 5g") == 0 or
-    die "Cannot lift coredump size limit for process $g_pid";
+if ($my_os =~ m/freebsd/i) {
+	# On FreeBSD, we cannot use gcore(1) because DTrace will have already
+	# attached via the ptrace(), conflicting with gcore.
+	system("sudo sysctl kern.coredump_on_".lc($COREDUMP_SIGNAL)."=1 >/dev/null") == 0 or
+          die "Cannot enable coredump-ing on signal $COREDUMP_SIGNAL";
+	system("sudo limits -P $g_pid -c 5g") == 0 or
+		die "Cannot lift coredump size limit for process $g_pid";
+	$do_coredump = \&_dump_core_kill;
+} else {
+	$do_coredump = \&_dump_core_gcore;
+}
 
 # XXX-LPT: Consider launching process-coredump-samples.pl from here (run in parallel with the workload)
 print "\@record-type:aspace-sample\ttimestamp-unix-ns\taddr-space-size-b",
       "\tcorefile\tcpu-time-ns\n";
 while (my $size_b = proc_vmstat()) {
-	my $do_coredump = ($slept_us % $SLEEP_US_LONG) == 0;
-	my $corefile = $do_coredump ? proc_coredump() : '';
+	my $coredump_now = ($slept_us % $SLEEP_US_LONG) == 0;
+	my $corefile = $coredump_now ? proc_coredump() : '';
 
 	printf "aspace-sample\t%d%06d000\t%d\t%s\t%d\n", ($g_time_s, $time_us, $size_b,
 	                                                  $corefile, $cpu_ts);
-	last if $do_coredump && !$corefile;
+	last if $coredump_now && !$corefile;
 
 	usleep($SLEEP_US_SHORT);
 	$slept_us += $SLEEP_US_SHORT;
