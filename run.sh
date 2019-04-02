@@ -60,10 +60,16 @@ my_dir=`dirname $0`
 my_dir=`cd $my_dir && pwd`
 
 
+# Initialise fresh repository clones
 for d in runs
 do
 	test -d $d -o -h $d || mkdir $d
 done
+
+if git submodule status | grep -q '^-'; then
+	git submodule init
+	git submodule update
+fi
 
 
 ts=`date '+%Y%m%d_%H%M%S'`
