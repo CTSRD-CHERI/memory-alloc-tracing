@@ -14,11 +14,6 @@ $MEM_TO_MAP >= 64 or die 'Must have greater memory-to-map ratio than the .vecbin
                           input-file ratio of 64:1';
 $MEM_TO_MAP % 64 == 0 or die 'Must have memory-to-map ratio multiple of the .vecbin
                               input-file ratio of 64:1';
-# $MIN_SKIP_B is the least amount of bytes that should be skipped.
-my $MIN_SKIP_B = 4 * 1024;
-$MIN_SKIP_B >= 1 * $MEM_TO_MAP or die "Can only look for $MEM_TO_MAP (MEM_TO_MAP)
-                                       minimum bytes to skip";
-my $MIN_SKIP_MAP = $MIN_SKIP_B / $MEM_TO_MAP;
 
 my $my_dir = dirname($0);
 my $corefile = $ARGV[0];
@@ -40,7 +35,7 @@ my @mem_map = map $_ != 0 ? ord('1') : ord('0'), unpack "b$map_to_map" x $mem_ma
 $mem_map = pack 'c' x $mem_map_len, @mem_map;
 #say $mem_map;
 
-my @skips = ($mem_map =~ m/0{$MIN_SKIP_MAP,}/g);
+my @skips = ($mem_map =~ m/0+/g);
 #say scalar @skips;
 my $skip = 0;
 map { $skip += length } @skips;
