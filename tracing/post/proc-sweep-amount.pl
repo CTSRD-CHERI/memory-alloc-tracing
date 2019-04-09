@@ -31,8 +31,9 @@ my $mem_map = <$fh>;
 
 my $map_to_map = $MEM_TO_MAP / 64;
 my $mem_map_len = length($mem_map) / $map_to_map;
-my @mem_map = map $_ != 0 ? ord('1') : ord('0'), unpack "b$map_to_map" x $mem_map_len, $mem_map;
-$mem_map = pack 'c' x $mem_map_len, @mem_map;
+my @mem_map = map $_ ne '0' x $map_to_map ? '1' : '0',
+                  unpack "a$map_to_map" x $mem_map_len, unpack 'b*', $mem_map;
+$mem_map = join '', @mem_map;
 #say $mem_map;
 
 my @skips = ($mem_map =~ m/0+/g);
