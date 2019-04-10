@@ -109,7 +109,7 @@ sudo dtrace -l -qw -Cs $dtrace_script -p $workload_pid 2>${trace_file}-err >&2
 sudo dtrace -Z -qw -Cs $dtrace_script -p $workload_pid \
                  2>>${trace_file}-err | $my_dir/tracing/normalise-trace.pl >${trace_file} &
 dtrace_pid=$!
-# Send the start signal to the workload
+# Send the start signal to the workload driver
 sleep 2 && kill -s SIGUSR1 $COPROC_PID
 $my_dir/tracing/proc-memstat.pl $workload_pid >${samples_file} 2>${samples_file}-err &
 proc_memstat_pid=$!
