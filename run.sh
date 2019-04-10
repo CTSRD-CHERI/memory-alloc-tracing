@@ -88,7 +88,7 @@ env > ${run_dir}/env
 sudo echo -n
 # Ensure the required dtrace modules are loaded
 sudo dtrace -ln 'pid:::entry' >/dev/null 2>&1
-sudo sysctl kern.dtrace.buffer_maxsize=`expr 10 \* 1024 \* 1024 \* 1024`
+sudo sysctl -i kern.dtrace.buffer_maxsize=`expr 10 \* 1024 \* 1024 \* 1024`
 
 # Start the workload coprocess (should be suspended), redirecting
 # its stdout/stderr to ours
