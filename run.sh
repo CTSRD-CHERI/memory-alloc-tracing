@@ -130,7 +130,7 @@ do
 done && mv $samples_file-processing $samples_file ;} &
 
 # Post-process
-wait $COPROC_PID $workload_pid
+wait $COPROC_PID
 wait $dtrace_pid
 test -d ${run_dir} &&
   $my_dir/tracing/post/merge-samples-and-trace.sh $samples_file $trace_file >${run_info_file} &&
