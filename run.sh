@@ -58,6 +58,7 @@ trap on_exit_echo_code EXIT
 ts_start=`date +%s`
 my_dir=`dirname $0`
 my_dir=`cd $my_dir && pwd`
+my_os=`uname -s`
 
 
 # Initialise fresh repository clones
@@ -97,8 +98,20 @@ sleep 6 && read -u ${COPROC[0]} workload_pid
 # Throttle down the workload process to avoid trace drops
 # XXX-LPT: tweak this knob if the trace shows sample drops
 #    TODO: pull this out as a config e.g. pcpu_limit ($cfg_pcpu_limit)
-sudo rctl -a process:$workload_pid:pcpu:deny=25
-
+export cfg_pcpu_limit=25
+case ${my_os,,} in
+	freebsd)
+		sudo rctl -a process:$workload_pid:pcpu:deny=$cfg_pcpu_limit
+		;;
+	darwin)
+		cpulimit_max_pcpu=`cpulimit -h | grep 'percentage of cpu allowed' | egrep -o '[1-9][0-9]+'`
+		sudo cpulimit -p $workload_pid \
+		              -l $(($cfg_pcpu_limit * $cpulimit_max_pcpu / 100)) >/dev/null &
+		;;
+	*)
+		echo Don\'t know how to throttle down the workload process on ${my_os} >&2
+		;;
+esac
 
 # Generate the DTrace script
 m4 -D ALLOCATORS="$cfg_allocators" -I $my_dir/tracing $my_dir/tracing/trace-alloc.m4 > $dtrace_script

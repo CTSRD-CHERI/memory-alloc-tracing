@@ -83,7 +83,7 @@ sub _dump_core_kill {
 	system("kill -$COREDUMP_SIGNAL $g_pid");
 }
 sub _dump_core_gcore {
-	system("sudo gcore -s -o $g_pid.core $g_pid");
+	system("sudo gcore -c ./%N.core $g_pid");
 }
 
 my $slept_us = 0;
