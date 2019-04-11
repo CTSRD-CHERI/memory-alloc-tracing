@@ -98,7 +98,7 @@ sleep 6 && read -u ${COPROC[0]} workload_pid
 # Throttle down the workload process to avoid trace drops
 # XXX-LPT: tweak this knob if the trace shows sample drops
 #    TODO: pull this out as a config e.g. pcpu_limit ($cfg_pcpu_limit)
-export cfg_pcpu_limit=25
+export cfg_pcpu_limit=10
 case ${my_os,,} in
 	freebsd)
 		sudo rctl -a process:$workload_pid:pcpu:deny=$cfg_pcpu_limit
