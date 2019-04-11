@@ -93,7 +93,7 @@ sudo sysctl -i kern.dtrace.buffer_maxsize=`expr 10 \* 1024 \* 1024 \* 1024`
 
 # Start the workload coprocess (should be suspended), redirecting
 # its stdout/stderr to ours
-{ coproc $my_dir/workload/$cfg_workload/run-$cfg_workload 2>&4 ;} 4>&2
+{ coproc $my_dir/workload/$cfg_workload/run-$cfg_workload $* 2>&4 ;} 4>&2
 sleep 6 && read -u ${COPROC[0]} workload_pid
 # Throttle down the workload process to avoid trace drops
 # XXX-LPT: tweak this knob if the trace shows sample drops
