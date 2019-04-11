@@ -26,15 +26,20 @@ define(`alloc_chain_fmt_args', `shift(foreach(`a', allocs, `, achain_pos_of(a)')
 
 
 dnl DTrace script API ------------------------------------------------------ {{{
-define(`ENTRY_OF_ALLOC', aentry_flag_of($1) += 1;
+define(`ENTRY_OF_ALLOC',
+pid$target::$2:`ifelse(index('FUNCS_MISSING_A_PROBE`, $2:entry), -1, entry, return)'
+{
+	aentry_flag_of($1) += 1;
 	achain_len += aentry_flag_of($1) == 1;
 	achain_pos_of($1) = aentry_flag_of($1) == 1 ? achain_len : 0;
-	)
+})
 define(`EXIT_OF_ALLOC',
+pid$target::$2:`ifelse(index('FUNCS_MISSING_A_PROBE`, $2:return), -1, return, entry)'
+{
 	achain_pos_of($1) = aentry_flag_of($1) == 1 ? 0 : achain_len;
 	achain_len -= aentry_flag_of($1) == 1;
 	aentry_flag_of($1) -= 1;
-	)
+})
 
 dnl Note: ALLOC_CHAIN_FMT and ALLOC_CHAIN_FMT_ARGS are obsolete,
 dnl use TRACE_CTXT instead

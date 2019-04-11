@@ -5,9 +5,9 @@
  * within this framework.
  */
 
+ENTRY_OF_ALLOC(mmap, mmap)
 pid$target::mmap:entry
 {
-	ENTRY_OF_ALLOC(mmap);
 	self->mmap_arg0 = arg0;
 	self->mmap_arg1 = arg1;  /* length */
 	self->mmap_arg2 = arg2;
@@ -32,12 +32,12 @@ pid$target::mmap:return {
 	self->mmap_arg3 = 0;
 	self->mmap_arg4 = 0;
 	self->mmap_arg5 = 0;
-	EXIT_OF_ALLOC(mmap);
 }
+EXIT_OF_ALLOC(mmap, mmap)
 
+ENTRY_OF_ALLOC(mmap, munmap)
 pid$target::munmap:entry
 {
-	ENTRY_OF_ALLOC(mmap);
 	self->munmap_arg0 = arg0;
 	self->munmap_arg1 = arg1;  /* length */
 }
@@ -53,5 +53,5 @@ pid$target::munmap:return
 pid$target::munmap:entry {
 	self->munmap_arg0 = 0;
 	self->munmap_arg1 = 0;
-	EXIT_OF_ALLOC(mmap);
 }
+EXIT_OF_ALLOC(mmap, munmap)

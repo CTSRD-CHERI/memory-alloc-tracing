@@ -5,9 +5,9 @@
  * within this framework.
  */
 
+ENTRY_OF_ALLOC(malloc, malloc)
 pid$target::malloc:entry
 {
-	ENTRY_OF_ALLOC(malloc);
 	self->malloc_arg0 = arg0;
 }
 pid$target::malloc:return
@@ -18,12 +18,12 @@ pid$target::malloc:return
 }
 pid$target::malloc:return {
 	self->malloc_arg0 = 0;
-	EXIT_OF_ALLOC(malloc);
 }
+EXIT_OF_ALLOC(malloc, malloc)
 
+ENTRY_OF_ALLOC(malloc, calloc)
 pid$target::calloc:entry
 {
-	ENTRY_OF_ALLOC(malloc);
 	self->calloc_arg0 = arg0;
 	self->calloc_arg1 = arg1;
 	self->using_malloc = 1;
@@ -39,12 +39,12 @@ pid$target::calloc:return {
 	self->using_malloc = 0;
 	self->calloc_arg0 = 0;
 	self->calloc_arg1 = 0;
-	EXIT_OF_ALLOC(malloc);
 }
+EXIT_OF_ALLOC(malloc, calloc)
 
+ENTRY_OF_ALLOC(malloc, aligned_alloc)
 pid$target::aligned_alloc:entry
 {
-	ENTRY_OF_ALLOC(malloc);
 	self->aligned_alloc_arg0 = arg0;
 	self->aligned_alloc_arg1 = arg1;
  	self->using_malloc = 1;
@@ -60,12 +60,12 @@ pid$target::aligned_alloc:entry {
  	self->using_malloc = 0;
 	self->aligned_alloc_arg0 = 0;
 	self->aligned_alloc_arg1 = 0;
-	EXIT_OF_ALLOC(malloc);
 }
+EXIT_OF_ALLOC(malloc, aligned_alloc)
 
+ENTRY_OF_ALLOC(malloc, valloc)
 pid$target::valloc:entry
 {
-	ENTRY_OF_ALLOC(malloc);
 	self->valloc_arg0 = arg0;
 	self->using_malloc = 1;
 }
@@ -78,12 +78,12 @@ pid$target::valloc:return
 pid$target::valloc:return {
 	self->using_malloc = 0;
 	self->valloc_arg0 = 0;
-	EXIT_OF_ALLOC(malloc);
 }
+EXIT_OF_ALLOC(malloc, valloc)
 
+ENTRY_OF_ALLOC(malloc, posix_memalign)
 pid$target::posix_memalign:entry
 {
-	ENTRY_OF_ALLOC(malloc);
 	self->posix_memalign_arg0 = (uintptr_t)arg0;
 	self->posix_memalign_arg1 = arg1;
 	self->posix_memalign_arg2 = arg2;
@@ -102,13 +102,13 @@ pid$target::posix_memalign:return {
 	self->posix_memalign_arg0 = 0;
 	self->posix_memalign_arg1 = 0;
 	self->posix_memalign_arg2 = 0;
-	EXIT_OF_ALLOC(malloc);
 }
+EXIT_OF_ALLOC(malloc, posix_memalign)
 
 
+ENTRY_OF_ALLOC(malloc, realloc)
 pid$target::realloc:entry
 {
-	ENTRY_OF_ALLOC(malloc);
 	self->realloc_arg0 = arg0;
 	self->realloc_arg1 = arg1;
 	self->using_malloc = 1;
@@ -127,18 +127,14 @@ pid$target::realloc:return {
 	self->using_free = 0;
 	self->realloc_arg0 = 0;
 	self->realloc_arg1 = 0;
-	EXIT_OF_ALLOC(malloc);
 }
+EXIT_OF_ALLOC(malloc, realloc)
 
 
-pid$target::free:entry {
-	ENTRY_OF_ALLOC(malloc);
-}
+ENTRY_OF_ALLOC(malloc, free)
 pid$target::free:entry
 / arg0 && !self->using_free / {
 	printf("\nfree(%p) TRACE_CTXT_FMT", arg0, TRACE_CTXT_FMT_ARGS);
 	ustack();
 }
-pid$target::free:return {
-	EXIT_OF_ALLOC(malloc);
-}
+EXIT_OF_ALLOC(malloc, free)

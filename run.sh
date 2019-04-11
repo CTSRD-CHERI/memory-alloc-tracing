@@ -117,6 +117,16 @@ esac
 m4 -D ALLOCATORS="$cfg_allocators" -I $my_dir/tracing $my_dir/tracing/trace-alloc.m4 > $dtrace_script
 # Report any trace probes that are not there to trace
 sudo dtrace -l -qw -Cs $dtrace_script -p $workload_pid 2>${trace_file}-err >&2
+# Regenerate the DTrace script adjusting for the missing entry or return probes
+funcs_missing_a_probe=`cat ${trace_file}-err | sed -n -e \
+'s/.*'\
+':\([_a-zA-Z0-9]\{1,\}\)'\
+':\([_a-zA-Z0-9]\{1,\}\)'\
+':[[:space:]]\{1,\}No probe matches description$'\
+'/\1:\2 \1/p' | egrep ':(entry|return) ' | sort | uniq | uniq -u -f 1 | cut -d ' ' -f 1`
+m4 -D ALLOCATORS="$cfg_allocators" -D FUNCS_MISSING_A_PROBE="$funcs_missing_a_probe" \
+   -I $my_dir/tracing $my_dir/tracing/trace-alloc.m4 >$dtrace_script
+
 # Permit destructive actions in dtrace (-w) to not abort due to
 # systemic unresponsiveness induced by heavy tracing
 sudo dtrace -Z -qw -Cs $dtrace_script -p $workload_pid \
