@@ -151,10 +151,12 @@ do
                                            >$samples_file-processing
 	_retry=300
 done && mv $samples_file-processing $samples_file ;} &
+process_samples_pid=$!
 
 # Post-process
 wait $COPROC_PID
 wait $dtrace_pid
+wait $process_samples_pid
 test -d ${run_dir} &&
   $my_dir/tracing/post/merge-samples-and-trace.sh $samples_file $trace_file >${run_info_file} &&
   rm -f $samples_file $trace_file
