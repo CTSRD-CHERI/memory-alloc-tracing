@@ -30,12 +30,12 @@ while getopts 'c:h' cmdline_opt $*; do
 		;;
 	esac
 done
+shift $((OPTIND - 1))
 if [ -z "$config_file" ]; then
 	test $# -gt 0 || { print_help; exit 1 ;}
 	config_file=`realpath run-config/config-generic`
 fi
 echo Using config file $config_file
-shift $((OPTIND - 1))
 
 
 # Parse the config file
