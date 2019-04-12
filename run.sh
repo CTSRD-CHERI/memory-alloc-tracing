@@ -12,13 +12,28 @@ function on_exit_echo_code {
 }
 
 function print_help {
-	echo "$0 -c config_file [executable]"
 	echo "$0 executable"
+	echo "$0 -c config_file [executable]"
+	printf "%${#0}s -h  Help: print this help and exit\n"
+	printf "%${#0}s -q  Quiet: do not echo commands as they are executed\n"
 }
 
+function echo_commands_on {
+	if [ -z "$cfg_quiet" ]; then
+		set -x
+	fi
+}
+function echo_commands_off {
+	set +x
+}
+function echo_command {
+	if [ -z "$cfg_quiet" ]; then
+		echo + $* >&2
+	fi
+}
 
 # Parse command-line arguments
-while getopts 'c:h' cmdline_opt $*; do
+while getopts 'c:hq' cmdline_opt $*; do
 	case "$cmdline_opt" in
 	c)
 		config_file=`realpath $OPTARG`
@@ -27,6 +42,9 @@ while getopts 'c:h' cmdline_opt $*; do
 	h)
 		print_help
 		exit 0
+		;;
+	q)
+		export cfg_quiet='true'
 		;;
 	esac
 done
@@ -79,7 +97,10 @@ dtrace_script=trace-alloc.d
 trace_file=$cfg_name-malloc-trace-$ts
 samples_file=$cfg_name-size-samples-$ts
 run_info_file=$cfg_name-run-info-$ts
+( echo_commands_on
 mkdir -p ${run_dir}
+)
+echo_command cd ${run_dir}
 cd ${run_dir}
 
 # Save env
@@ -89,34 +110,44 @@ env > ${run_dir}/env
 sudo echo -n
 # Ensure the required dtrace modules are loaded
 sudo dtrace -ln 'pid:::entry' >/dev/null 2>&1
-sudo sysctl -i kern.dtrace.buffer_maxsize=`expr 10 \* 1024 \* 1024 \* 1024`
+( echo_commands_on
+sudo sysctl -i kern.dtrace.buffer_maxsize=10737418240  # 10 GiB
+)
 
 # Start the workload coprocess (should be suspended), redirecting
 # its stdout/stderr to ours
+echo_command $my_dir/workload/$cfg_workload/run-$cfg_workload $*
 { coproc $my_dir/workload/$cfg_workload/run-$cfg_workload $* 2>&4 ;} 4>&2
 sleep 6 && read -u ${COPROC[0]} workload_pid
+echo Workload PID: $workload_pid
 # Throttle down the workload process to avoid trace drops
 # XXX-LPT: tweak this knob if the trace shows sample drops
 #    TODO: pull this out as a config e.g. pcpu_limit ($cfg_pcpu_limit)
 export cfg_pcpu_limit=10
 case ${my_os,,} in
 	freebsd)
+		( echo_commands_on
 		sudo rctl -a process:$workload_pid:pcpu:deny=$cfg_pcpu_limit
+		)
 		;;
 	darwin)
 		cpulimit_max_pcpu=`cpulimit -h | grep 'percentage of cpu allowed' | egrep -o '[1-9][0-9]+'`
+		( echo_commands_on
 		sudo cpulimit -p $workload_pid \
 		              -l $(($cfg_pcpu_limit * $cpulimit_max_pcpu / 100)) >/dev/null &
+		)
 		;;
 	*)
 		echo Don\'t know how to throttle down the workload process on ${my_os} >&2
 		;;
 esac
 
+( echo_commands_on
 # Generate the DTrace script
 m4 -D ALLOCATORS="$cfg_allocators" -I $my_dir/tracing $my_dir/tracing/trace-alloc.m4 > $dtrace_script
 # Report any trace probes that are not there to trace
 sudo dtrace -l -qw -Cs $dtrace_script -p $workload_pid 2>${trace_file}-err >&2
+)
 # Regenerate the DTrace script adjusting for the missing entry or return probes
 funcs_missing_a_probe=`cat ${trace_file}-err | sed -n -e \
 's/.*'\
@@ -134,7 +165,9 @@ sudo dtrace -Z -qw -Cs $dtrace_script -p $workload_pid \
 dtrace_pid=$!
 # Send the start signal to the workload driver
 sleep 2 && kill -s SIGUSR1 $COPROC_PID
+( echo_commands_on
 $my_dir/tracing/proc-memstat.pl $workload_pid >${samples_file} 2>${samples_file}-err &
+)
 proc_memstat_pid=$!
 
 # Disable exiting on any non-zero code, the workload might have usefully run for long enough
@@ -147,8 +180,10 @@ _retry=30;
 while kill -0 $proc_memstat_pid >/dev/null 2>/dev/null
 do
     sleep $_retry
+	( echo_commands_on
     $my_dir/tracing/post/process-coredump-samples.pl <$samples_file \
                                            >$samples_file-processing
+	)
 	_retry=300
 done && mv $samples_file-processing $samples_file ;} &
 process_samples_pid=$!
@@ -157,6 +192,8 @@ process_samples_pid=$!
 wait $COPROC_PID
 wait $dtrace_pid
 wait $process_samples_pid
+( echo_commands_on
 test -d ${run_dir} &&
   $my_dir/tracing/post/merge-samples-and-trace.sh $samples_file $trace_file >${run_info_file} &&
   rm -f $samples_file $trace_file
+)

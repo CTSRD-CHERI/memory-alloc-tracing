@@ -7,7 +7,6 @@ workload_pid=$!
 sleep 0.1 && kill -STOP $workload_pid
 
 echo $workload_pid
-echo Workload PID: $workload_pid >&2
 
 # Wait for SIGUSR1
 function set_sigusr1_received {
