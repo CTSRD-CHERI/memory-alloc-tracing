@@ -16,6 +16,10 @@ function print_help {
 	echo "$0 -c config_file [executable]"
 	printf "%${#0}s -h  Help: print this help and exit\n"
 	printf "%${#0}s -q  Quiet: do not echo commands as they are executed\n"
+	printf "%${#0}s -t T  Throttle the workload process to T%% of CPU time usage.\n"
+	printf "%${#0}s       Defaults to 10%%.  Use this option to adjust the intensity of\n"
+	printf "%${#0}s       the workload process to avoid DTrace dropping samples to cope, or\n"
+	printf "%${#0}s       to allow the workload process to run faster.\n"
 }
 
 function echo_commands_on {
@@ -33,7 +37,7 @@ function echo_command {
 }
 
 # Parse command-line arguments
-while getopts 'c:hq' cmdline_opt $*; do
+while getopts 'c:hqt:' cmdline_opt $*; do
 	case "$cmdline_opt" in
 	c)
 		config_file=`realpath $OPTARG`
@@ -45,6 +49,9 @@ while getopts 'c:hq' cmdline_opt $*; do
 		;;
 	q)
 		export cfg_quiet='true'
+		;;
+	t)
+		cfg_pcpu_limit=`expr $OPTARG % 100`
 		;;
 	esac
 done
@@ -121,9 +128,6 @@ echo_command $my_dir/workload/$cfg_workload/run-$cfg_workload $*
 sleep 6 && read -u ${COPROC[0]} workload_pid
 echo Workload PID: $workload_pid
 # Throttle down the workload process to avoid trace drops
-# XXX-LPT: tweak this knob if the trace shows sample drops
-#    TODO: pull this out as a config e.g. pcpu_limit ($cfg_pcpu_limit)
-export cfg_pcpu_limit=10
 case ${my_os,,} in
 	freebsd)
 		( echo_commands_on
@@ -188,9 +192,13 @@ do
 done && mv $samples_file-processing $samples_file ;} &
 process_samples_pid=$!
 
+tail -f ${trace_file}-err > >(grep 'drops on CPU') &
+monitor_drops_pid=$!
+
 # Post-process
 wait $COPROC_PID
 wait $dtrace_pid
+kill $monitor_drops_pid
 wait $process_samples_pid
 ( echo_commands_on
 test -d ${run_dir} &&
