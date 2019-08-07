@@ -56,12 +56,18 @@ while getopts 'c:hqt:' cmdline_opt $*; do
 	esac
 done
 shift $((OPTIND - 1))
+
+# Command-line argument defaults
 if [ -z "$config_file" ]; then
 	test $# -gt 0 || { print_help; exit 1 ;}
 	config_file=`realpath run-config/config-generic`
 fi
-echo Using config file $config_file
+if [ -z "$cfg_pcpu_limit" ]; then
+	cfg_pcpu_limit=10
+fi
 
+echo Using config file $config_file
+echo Throttling workload proces to $cfg_pcpu_limit% CPU time
 
 # Parse the config file
 while read name val; do
