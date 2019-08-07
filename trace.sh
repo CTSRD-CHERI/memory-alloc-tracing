@@ -3,7 +3,10 @@ function on_err_stop_workload_process {
 	err=$?
 	run_duration=$((`date +%s` - $ts_start))
 	test $run_duration -lt 30 && rm -rf $run_dir
-	test $COPROC_PID && kill -s SIGKILL $COPROC_PID
+	test "$COPROC_PID" && kill -s SIGKILL $COPROC_PID
+	test "$proc_memstat_pid" && kill -s SIGKILL $proc_memstat_pid
+	test "$process_samples_pid" && kill -s SIGKILL $process_samples_pid
+	test "$monitor_drops_pid" && kill -s SIGKILL $monitor_drops_pid
 	exit $err
 }
 
