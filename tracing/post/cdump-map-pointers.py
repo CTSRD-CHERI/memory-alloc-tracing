@@ -87,7 +87,7 @@ args = parser.parse_args()
 # Redirect execution to pycdump-scan.py if the host OS uses ELF coredumps
 if os.uname().sysname.lower() != 'darwin':
     os.execl(sys.executable, sys.executable,
-             my_dir+'/pycdump-scan/pycdump-scan.py', args.coredump)
+             my_dir+'/pycdump-scan/pycdump-scan.py', '--dump-ptr-vector', args.coredump)
 
 ptr_map, ptr_size = bool_ptr_map_of_coredump(args.coredump)
 
