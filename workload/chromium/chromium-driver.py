@@ -34,13 +34,14 @@ urls_partitioned = [0]
 urls_partitioned.extend(cumsum((2**random.choice(range(7)) for i in iter(int, 1)), len(urls)))
 urls_partitioned = [urls[slice(s, e)] for s, e in zip(urls_partitioned, urls_partitioned[1:])]
 
-driver_opts = {}
+driver_opts = {'desired_capabilities': {
+                    'loggingPrefs': {'browser': 'ALL'},
+                },
+              }
 browser_opts = {'args': ['--single-process',
-                         '--browser-startup-dialog',
+                         '--browser-startup-dialog',   # browser awaits for SIGUSR1 before launching fully
                          #'--headless',
                         ],
-                'desired_capabilities': {'loggingPrefs': {'browser': 'ALL'},
-                                        },
                }
 if args.chrome_binary is not None:
     browser_opts['binary'] = args.chrome_binary
