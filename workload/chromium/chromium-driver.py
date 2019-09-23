@@ -16,6 +16,8 @@ import params
 argp = argparse.ArgumentParser(description='Drive chromium through the workload set up in the directory')
 argp.add_argument("--chrome-binary", action='store', default=None, help="Override path to chrome binary")
 argp.add_argument("--chrome-stdout", action='store', default=None, help="Output chrome's stdout/stderr to file")
+argp.add_argument("--chrome-no-await-sig", action='store_true', default=None,
+                  help="Do not ask chrome to wait for SIGUSR1 before launching fully")
 args = argp.parse_args()
 
 
@@ -39,12 +41,13 @@ driver_opts = {'desired_capabilities': {
                 },
               }
 browser_opts = {'args': ['--single-process',
-                         '--browser-startup-dialog',   # browser awaits for SIGUSR1 before launching fully
                          #'--headless',
                         ],
                }
 if args.chrome_binary is not None:
     browser_opts['binary'] = args.chrome_binary
+if not args.chrome_no_await_sig:
+    browser_opts['args'].append('--browser-startup-dialog')
 if args.chrome_stdout is not None:
     # service_args processing requires patching nerodia.Capabilites._process_arguments()
     driver_opts['service_args'] = ['--verbose', '--log-path={0}'.format(args.chrome_stdout)]
