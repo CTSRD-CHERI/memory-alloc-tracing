@@ -43,6 +43,7 @@ driver_opts = {'desired_capabilities': {
 browser_opts = {'args': ['--single-process',
                          #'--headless',
                         ],
+                #'debugger_address': "127.0.0.1:9222"
                }
 if args.chrome_binary is not None:
     browser_opts['binary'] = args.chrome_binary

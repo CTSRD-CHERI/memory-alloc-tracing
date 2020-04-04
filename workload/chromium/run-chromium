@@ -24,6 +24,8 @@ chrome_binary=~/chromium-65-more-malloc$chrome_dir_suffix/chrome
 chrome_binary=`realpath $chrome_binary` || \
      { err=$?; echo Could not find Chromium binary $chrome_binary >&2; exit $err ;}
 echo Using Chromium binary $chrome_binary >&2
+#$chrome_binary --remote-debugging-port=9222 --user-data-dir="/tmp/" --browser-startup-dialog &
+#sleep 10
 { coproc $my_dir/chromium-driver.py --chrome-binary=$chrome_binary \
                         --chrome-stdout=`pwd`/chromium-out 2>&4 ;} 4>&2
 sleep 4 && chromium_pid=`pgrep -f browser-startup-dialog` || \
