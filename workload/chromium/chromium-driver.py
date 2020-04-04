@@ -112,12 +112,13 @@ class Tab:
                 while True:
                     try:
                         self._bwin.use()
+                        browser.wait()
                         browser.goto(url)
-                    except (WebDriverException, UnexpectedAlertPresentException):
+                    except (WebDriverException, UnexpectedAlertPresentException) as e:
                         exceptions += 1
                         if exceptions > exceptions_max:
                             success = False
-                            raise
+                            raise RuntimeError('browser.goto({0})'.format(url)) from e
                         else:
                             sleep(.5)
                     else:
@@ -151,10 +152,14 @@ while urls_partitioned or tabs:
                 tabs.remove(t)
                 t.close()
 
-    for t in list(tabs):
-        if not t.goto_next_url(random.choice(range(1, 20))):
-            tabs.remove(t)
-            urls_visited = urls_visited + len(t.urls_visited)
+    try:
+        for t in list(tabs):
+            if not t.goto_next_url(random.choice(range(1, 20))):
+                tabs.remove(t)
+                urls_visited = urls_visited + len(t.urls_visited)
+    except:
+        browser.close()
+        raise
 
     if urls_visited >= tabs_required_randomise_last + tabs_required_randomise_period:
         tabs_required = int(tabs_required * random.choice((0.25, 0.5, 2, 4)))
