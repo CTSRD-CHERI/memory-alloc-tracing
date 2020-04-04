@@ -131,12 +131,12 @@ class Tab:
 
 tabs = set()
 urls_visited = 0
-tabs_required = 1
+tabs_required = 8
 # Randomise tabs_required every tabs_required_randomise_period URLs; save the latest urls_visited
 # after an update in tabs_required_randomise_last
 #urls_partitioned = [urls]                # Disabled
 #tabs_required_randomise_period = 10**9   # Disabled
-tabs_required_randomise_period = 50
+tabs_required_randomise_period = 10
 tabs_required_randomise_last = 0
 workload_pause_period = 0
 workload_pause_last = 0
@@ -161,7 +161,7 @@ while urls_partitioned or tabs:
         browser.close()
         raise
 
-    if urls_visited >= tabs_required_randomise_last + tabs_required_randomise_period:
+    if urls_visited - tabs_required_randomise_last >= len(tabs) * tabs_required_randomise_period:
         tabs_required = int(tabs_required * random.choice((0.25, 0.5, 2, 4)))
         tabs_required = max(1, min(tabs_required, params.tabs_max))
         tabs_required_randomise_last = urls_visited
